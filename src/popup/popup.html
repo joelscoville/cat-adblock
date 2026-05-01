@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cat Adblocker</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main class="popup">
+      <div class="hero">
+        <div class="hero__icon">=^..^=</div>
+        <div>
+          <h1>Cat Adblocker</h1>
+          <p>Swap ad slots for tiny cat cinema.</p>
+        </div>
+      </div>
+
+      <label class="toggle">
+        <span>Enabled</span>
+        <input id="enabled" type="checkbox" />
+      </label>
+
+      <button id="rescan" type="button">Replace ads on this tab</button>
+      <p id="status" class="status"></p>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+/Users/joel/Documents/cat-adblocker/.devenv/flake.json
+/Users/joel/Documents/cat-adblocker/.devenv.flake.nix
+/Users/joel/Documents/cat-adblocker/.env
+/Users/joel/Documents/cat-adblocker/devenv.local.nix
+/Users/joel/Documents/cat-adblocker/devenv.lock
+/Users/joel/Documents/cat-adblocker/devenv.nix
+/Users/joel/Documents/cat-adblocker/devenv.yaml

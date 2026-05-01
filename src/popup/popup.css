@@ -1,0 +1,77 @@
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  min-width: 280px;
+  font: 14px/1.4 system-ui, sans-serif;
+  color: #f6f2e8;
+  background:
+    radial-gradient(circle at top, rgba(255, 211, 117, 0.25), transparent 40%),
+    linear-gradient(160deg, #1c1c1c, #102430);
+}
+
+.popup {
+  padding: 16px;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.hero__icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
+}
+
+h1 {
+  margin: 0 0 2px;
+  font-size: 18px;
+}
+
+p {
+  margin: 0;
+  color: rgba(246, 242, 232, 0.74);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+button {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 12px;
+  font: inherit;
+  font-weight: 700;
+  color: #0a141a;
+  background: #ffd375;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #ffe199;
+}
+
+.status {
+  min-height: 1.2em;
+  margin-top: 12px;
+  font-size: 12px;
+}

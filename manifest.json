@@ -1,0 +1,47 @@
+{
+  "manifest_version": 2,
+  "name": "Cat Adblocker",
+  "version": "0.1.0",
+  "description": "Blocks a subset of ads and replaces many visible ad slots with looping cat-themed videos.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "webRequest",
+    "webRequestBlocking",
+    "<all_urls>"
+  ],
+  "background": {
+    "scripts": [
+      "src/background/background.js"
+    ],
+    "persistent": true
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "src/content/content.js"
+      ],
+      "css": [
+        "src/content/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "browser_action": {
+    "default_title": "Cat Adblocker",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": "icons/cat.svg"
+  },
+  "icons": {
+    "48": "icons/cat.svg",
+    "96": "icons/cat.svg"
+  },
+  "web_accessible_resources": [
+    "assets/video-manifest.json",
+    "assets/videos/*",
+    "icons/*"
+  ]
+}
