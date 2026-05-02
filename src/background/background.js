@@ -212,6 +212,10 @@ browser.runtime.onMessage.addListener(async (message, sender) => {
     await sendMessageToActiveTab({ type: "CAT_ADBLOCKER_RESCAN" });
   }
 
+  if (message?.type === "CAT_ADBLOCKER_RUN_INTERRUPTION_NOW") {
+    await sendMessageToActiveTab({ type: "CAT_ADBLOCKER_RUN_INTERRUPTION_NOW" });
+  }
+
   if (message?.type === "CAT_ADBLOCKER_SET_CATEGORIES") {
     const enabledCategoryIds = Array.isArray(message.enabledCategoryIds)
       ? message.enabledCategoryIds

@@ -1,37 +1,173 @@
 {
   "categories": [
     {
+      "id": "brainrot",
+      "label": "Brainrot",
+      "videos": [
+        {
+          "filename": "IMG_0898.webm",
+          "path": "server/videos/brainrot/IMG_0898.webm",
+          "width": 480,
+          "height": 480,
+          "aspectRatio": 1.0
+        },
+        {
+          "filename": "YTDown_YouTube_W_W-OIIA-OIIA-Spinning-Cat_Media_IxX_QHay02M_001_1080p.webm",
+          "path": "server/videos/brainrot/YTDown_YouTube_W_W-OIIA-OIIA-Spinning-Cat_Media_IxX_QHay02M_001_1080p.webm",
+          "width": 854,
+          "height": 480,
+          "aspectRatio": 1.7792
+        },
+        {
+          "filename": "2026-05-02 14.10.41.webm",
+          "path": "server/videos/brainrot/2026-05-02 14.10.41.webm",
+          "width": 1024,
+          "height": 576,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "2026-05-02 2026-05-02 14.16.52.webm",
+          "path": "server/videos/brainrot/2026-05-02 2026-05-02 14.16.52.webm",
+          "width": 576,
+          "height": 1024,
+          "aspectRatio": 0.5625
+        },
+        {
+          "filename": "IMG_0900.webm",
+          "path": "server/videos/brainrot/IMG_0900.webm",
+          "width": 576,
+          "height": 576,
+          "aspectRatio": 1.0
+        }
+      ]
+    },
+    {
       "id": "cat-videos",
       "label": "Cat Videos",
       "videos": [
         {
+          "filename": "\"Arya\" Cat plays with Acalypha indica-Pilangsari-2019.webm",
+          "path": "server/videos/cat-videos/\"Arya\" Cat plays with Acalypha indica-Pilangsari-2019.webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 2.webm",
+          "path": "server/videos/cat-videos/2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 2.webm",
+          "width": 1920,
+          "height": 1080,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 4.webm",
+          "path": "server/videos/cat-videos/2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 4.webm",
+          "width": 1920,
+          "height": 1080,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "35 удивительных трюков от Бенгальского кота (без звука).webm",
+          "path": "server/videos/cat-videos/35 удивительных трюков от Бенгальского кота (без звука).webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "Andra and Billy.webm",
+          "path": "server/videos/cat-videos/Andra and Billy.webm",
+          "width": 1920,
+          "height": 1080,
+          "aspectRatio": 1.7778
+        },
+        {
           "filename": "Cat behaviour - self-grooming.webm",
+          "path": "server/videos/cat-videos/Cat behaviour - self-grooming.webm",
           "width": 1280,
           "height": 720,
           "aspectRatio": 1.7778
         },
         {
           "filename": "Cat discovers it was being spied on.webm",
+          "path": "server/videos/cat-videos/Cat discovers it was being spied on.webm",
           "width": 720,
           "height": 1280,
           "aspectRatio": 0.5625
         },
         {
+          "filename": "Cat Fluffy having a couching fit.webm",
+          "path": "server/videos/cat-videos/Cat Fluffy having a couching fit.webm",
+          "width": 688,
+          "height": 652,
+          "aspectRatio": 1.0552
+        },
+        {
           "filename": "Cat in a Bag.webm",
+          "path": "server/videos/cat-videos/Cat in a Bag.webm",
           "width": 640,
           "height": 480,
           "aspectRatio": 1.3333
         },
         {
           "filename": "Cat interacting with catnip (nepeta).webm",
+          "path": "server/videos/cat-videos/Cat interacting with catnip (nepeta).webm",
           "width": 1280,
           "height": 720,
           "aspectRatio": 1.7778
         },
         {
           "filename": "Cat opening door.webm",
+          "path": "server/videos/cat-videos/Cat opening door.webm",
           "width": 1080,
           "height": 1920,
+          "aspectRatio": 0.5625
+        },
+        {
+          "filename": "2026-05-02 14.12.11.webm",
+          "path": "server/videos/cat-videos/2026-05-02 14.12.11.webm",
+          "width": 576,
+          "height": 1024,
+          "aspectRatio": 0.5625
+        },
+        {
+          "filename": "2026-05-02 14.12.22.webm",
+          "path": "server/videos/cat-videos/2026-05-02 14.12.22.webm",
+          "width": 576,
+          "height": 1024,
+          "aspectRatio": 0.5625
+        }
+      ]
+    },
+    {
+      "id": "memes",
+      "label": "Memes",
+      "videos": [
+        {
+          "filename": "IMG_0896.webm",
+          "path": "server/videos/memes/IMG_0896.webm",
+          "width": 262,
+          "height": 480,
+          "aspectRatio": 0.5458
+        },
+        {
+          "filename": "IMG_0897.webm",
+          "path": "server/videos/memes/IMG_0897.webm",
+          "width": 384,
+          "height": 848,
+          "aspectRatio": 0.4528
+        },
+        {
+          "filename": "IMG_0899.webm",
+          "path": "server/videos/memes/IMG_0899.webm",
+          "width": 464,
+          "height": 848,
+          "aspectRatio": 0.5472
+        },
+        {
+          "filename": "sykkuno.webm",
+          "path": "server/videos/memes/sykkuno.webm",
+          "width": 720,
+          "height": 1280,
           "aspectRatio": 0.5625
         }
       ]

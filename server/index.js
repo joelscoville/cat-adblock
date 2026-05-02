@@ -1,6 +1,7 @@
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
+const { execFile } = require("child_process");
 const { URL } = require("url");
 
 const PORT = Number(process.env.PORT || 3000);
@@ -12,6 +13,14 @@ const MIME_TYPES = {
   ".webm": "video/webm",
   ".json": "application/json; charset=utf-8"
 };
+const MAX_JSON_BODY_BYTES = 1024 * 16;
+
+function sendCorsHeaders(res, statusCode, extraHeaders = {}) {
+  res.writeHead(statusCode, {
+    "Access-Control-Allow-Origin": "*",
+    ...extraHeaders
+  });
+}
 
 function formatCategoryLabel(categoryId) {
   return categoryId
@@ -130,8 +139,7 @@ function filterCategories(index, categoryParam) {
 }
 
 function sendJson(res, statusCode, payload) {
-  res.writeHead(statusCode, {
-    "Access-Control-Allow-Origin": "*",
+  sendCorsHeaders(res, statusCode, {
     "Content-Type": MIME_TYPES[".json"]
   });
   res.end(`${JSON.stringify(payload, null, 2)}\n`);
@@ -185,13 +193,136 @@ function sendVideo(req, res, requestPath) {
   fs.createReadStream(videoPath).pipe(res);
 }
 
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let body = "";
+
+    req.setEncoding("utf8");
+    req.on("data", (chunk) => {
+      body += chunk;
+      if (body.length > MAX_JSON_BODY_BYTES) {
+        reject(new Error("Request body too large"));
+        req.destroy();
+      }
+    });
+    req.on("end", () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (error) {
+        reject(new Error("Invalid JSON"));
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function getFiniteNumber(value, fallback = null) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function toScreenPoint(payload) {
+  const x = getFiniteNumber(payload?.x);
+  const y = getFiniteNumber(payload?.y);
+  const screenX = getFiniteNumber(payload?.screenX);
+  const screenY = getFiniteNumber(payload?.screenY);
+  const outerWidth = getFiniteNumber(payload?.outerWidth);
+  const outerHeight = getFiniteNumber(payload?.outerHeight);
+  const innerWidth = getFiniteNumber(payload?.innerWidth);
+  const innerHeight = getFiniteNumber(payload?.innerHeight);
+
+  if (
+    x === null ||
+    y === null ||
+    screenX === null ||
+    screenY === null ||
+    outerWidth === null ||
+    outerHeight === null ||
+    innerWidth === null ||
+    innerHeight === null
+  ) {
+    return null;
+  }
+
+  const sideChrome = Math.max((outerWidth - innerWidth) / 2, 0);
+  const topChrome = Math.max(outerHeight - innerHeight - sideChrome, 0);
+
+  return {
+    x: Math.round(screenX + sideChrome + x),
+    y: Math.round(screenY + topChrome + y)
+  };
+}
+
+function moveCursorOnMac(screenPoint) {
+  const script = `
+function run(argv) {
+  ObjC.import("ApplicationServices");
+  const x = Number(argv[0]);
+  const y = Number(argv[1]);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    throw new Error("Invalid cursor coordinates");
+  }
+  $.CGWarpMouseCursorPosition($.CGPointMake(x, y));
+  $.CGAssociateMouseAndMouseCursorPosition(true);
+  return "ok";
+}
+`;
+
+  return new Promise((resolve, reject) => {
+    execFile("osascript", ["-l", "JavaScript", "-e", script, String(screenPoint.x), String(screenPoint.y)], (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
+async function handleCursorMove(req, res) {
+  if (process.platform !== "darwin") {
+    sendJson(res, 501, {
+      error: "Cursor movement is only implemented for macOS in this local server."
+    });
+    return;
+  }
+
+  let payload;
+  try {
+    payload = await readJsonBody(req);
+  } catch (error) {
+    sendJson(res, 400, { error: error.message });
+    return;
+  }
+
+  const screenPoint = toScreenPoint(payload);
+  if (!screenPoint) {
+    sendJson(res, 400, { error: "Missing or invalid cursor coordinates" });
+    return;
+  }
+
+  try {
+    await moveCursorOnMac(screenPoint);
+    sendJson(res, 200, {
+      ok: true,
+      x: screenPoint.x,
+      y: screenPoint.y
+    });
+  } catch (error) {
+    sendJson(res, 500, {
+      error: "Failed to move cursor",
+      details: error.message
+    });
+  }
+}
+
 function handleRequest(req, res) {
   const url = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`);
 
   if (req.method === "OPTIONS") {
-    res.writeHead(204, {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Methods": "GET,HEAD,OPTIONS",
+    sendCorsHeaders(res, 204, {
+      "Access-Control-Allow-Methods": "GET,HEAD,POST,OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type"
     });
     res.end();
@@ -201,6 +332,11 @@ function handleRequest(req, res) {
   if (url.pathname === "/api/videos" && req.method === "GET") {
     const baseUrl = `http://${req.headers.host || `localhost:${PORT}`}`;
     sendJson(res, 200, filterCategories(buildVideoIndex(baseUrl), url.searchParams.get("categories")));
+    return;
+  }
+
+  if (url.pathname === "/api/cursor/move" && req.method === "POST") {
+    handleCursorMove(req, res);
     return;
   }
 

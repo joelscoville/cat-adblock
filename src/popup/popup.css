@@ -95,6 +95,21 @@ button:hover {
   background: #ffe199;
 }
 
+.button-secondary {
+  margin-top: 8px;
+  color: #f6f2e8;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.button-secondary:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .status {
   min-height: 1.2em;
   margin-top: 12px;

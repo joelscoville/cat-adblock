@@ -1,5 +1,6 @@
 const enabledInput = document.getElementById("enabled");
 const rescanButton = document.getElementById("rescan");
+const runInterruptionButton = document.getElementById("run-interruption");
 const statusText = document.getElementById("status");
 const categoriesContainer = document.getElementById("categories");
 const DEFAULT_SETTINGS = {
@@ -68,6 +69,7 @@ async function loadState() {
   enabledInput.checked = enabled;
   renderCategories(enabledCategoryIds);
   rescanButton.disabled = availableCategories.length === 0;
+  runInterruptionButton.disabled = availableCategories.length === 0;
   statusText.textContent =
     availableCategories.length === 0
       ? API_UNAVAILABLE_MESSAGE
@@ -104,6 +106,11 @@ enabledInput.addEventListener("change", async () => {
 rescanButton.addEventListener("click", async () => {
   await browser.runtime.sendMessage({ type: "CAT_ADBLOCKER_RESCAN" });
   statusText.textContent = "Rescanning the current tab.";
+});
+
+runInterruptionButton.addEventListener("click", async () => {
+  await browser.runtime.sendMessage({ type: "CAT_ADBLOCKER_RUN_INTERRUPTION_NOW" });
+  statusText.textContent = "Starting fullscreen video on this tab.";
 });
 
 loadCategories().then(loadState);

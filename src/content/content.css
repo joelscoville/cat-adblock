@@ -16,6 +16,62 @@
   object-fit: cover;
   object-position: center center;
   background: #111;
+  pointer-events: none;
+}
+
+.cat-adblocker-skip {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  padding: 5px 9px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff7da;
+  font: 700 12px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.cat-adblocker-skip:hover,
+.cat-adblocker-skip:focus-visible {
+  background: rgba(22, 22, 22, 0.9);
+  outline: none;
+}
+
+.cat-adblocker-quad {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.cat-adblocker-quad__cell {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #050505;
+}
+
+.cat-adblocker-quad__cell video {
+  width: 100%;
+  height: 100%;
+}
+
+.cat-adblocker-youtube-ad {
+  width: 100% !important;
+  height: 100% !important;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: #050505;
+}
+
+.cat-adblocker-youtube-ad video {
+  object-fit: contain;
+  background: #050505;
 }
 
 .cat-adblocker-slot__fallback {
@@ -45,6 +101,30 @@
   z-index: 1;
 }
 
+.cat-adblocker-random-insert {
+  position: fixed;
+  z-index: 2147483645;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  box-sizing: border-box;
+  background: #050505;
+  box-shadow:
+    0 18px 44px rgba(0, 0, 0, 0.36),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  pointer-events: auto;
+}
+
+.cat-adblocker-random-insert video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+  background: #050505;
+  pointer-events: none;
+}
+
 .cat-adblocker-interruption {
   position: fixed;
   inset: 0;
@@ -61,6 +141,21 @@
   isolation: isolate;
   background: #050505;
   cursor: wait;
+}
+
+.cat-adblocker-interruption--quad {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.cat-adblocker-interruption__cell {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #050505;
 }
 
 .cat-adblocker-interruption__video {
@@ -80,6 +175,11 @@
   background: #050505;
 }
 
+.cat-adblocker-interruption--quad .cat-adblocker-interruption__video {
+  width: 100%;
+  height: 100%;
+}
+
 .cat-adblocker-interruption:fullscreen,
 .cat-adblocker-interruption:-webkit-full-screen {
   width: 100vw;
@@ -95,6 +195,28 @@
   height: 100%;
 }
 
+.cat-adblocker-interruption__skip {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 3;
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 6px;
+  padding: 8px 12px;
+  box-sizing: border-box;
+  background: rgba(0, 0, 0, 0.72);
+  color: #fff7da;
+  font: 700 13px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.cat-adblocker-interruption__skip:hover,
+.cat-adblocker-interruption__skip:focus-visible {
+  background: rgba(22, 22, 22, 0.9);
+  outline: none;
+}
+
 .cat-adblocker-interruption__badge {
   position: absolute;
   right: 16px;
@@ -106,4 +228,225 @@
   color: #fff7da;
   font: 700 13px/1.2 system-ui, sans-serif;
   pointer-events: none;
+}
+
+.cat-adblocker-oiiai-takeover {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #050505;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.cat-adblocker-oiiai-takeover__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+  filter: contrast(1.2) saturate(1.45);
+}
+
+.cat-adblocker-oiiai-takeover__tint {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(circle at var(--cat-adblocker-rgb-x, 50%) var(--cat-adblocker-rgb-y, 50%), rgba(255, 255, 255, 0.22), transparent 22%),
+    linear-gradient(120deg, rgba(255, 0, 76, 0.34), rgba(0, 255, 180, 0.28), rgba(0, 86, 255, 0.34));
+  mix-blend-mode: screen;
+  animation:
+    cat-adblocker-rgb-sweep 4200ms linear infinite,
+    cat-adblocker-rgb-hue 1800ms linear infinite;
+}
+
+.cat-adblocker-oiiai-takeover__lasers {
+  position: absolute;
+  inset: -22%;
+  z-index: 2;
+  opacity: 0.95;
+  background:
+    linear-gradient(64deg, transparent 0 44%, rgba(255, 0, 68, 0.92) 45%, rgba(255, 255, 255, 0.82) 46%, transparent 48%),
+    linear-gradient(118deg, transparent 0 50%, rgba(0, 255, 180, 0.86) 51%, rgba(255, 255, 255, 0.66) 52%, transparent 54%),
+    linear-gradient(174deg, transparent 0 40%, rgba(0, 112, 255, 0.92) 41%, rgba(255, 255, 255, 0.72) 42%, transparent 44%),
+    linear-gradient(28deg, transparent 0 55%, rgba(255, 242, 0, 0.82) 56%, rgba(255, 255, 255, 0.58) 57%, transparent 59%);
+  background-size: 160% 160%, 190% 190%, 220% 220%, 180% 180%;
+  mix-blend-mode: screen;
+  filter: blur(1px) saturate(1.6);
+  animation:
+    cat-adblocker-laser-pan 2500ms linear infinite,
+    cat-adblocker-laser-spin 6200ms linear infinite;
+}
+
+html.cat-adblocker-hide-cursor,
+html.cat-adblocker-hide-cursor * {
+  cursor: none !important;
+}
+
+.cat-adblocker-paw-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  pointer-events: none;
+  isolation: isolate;
+}
+
+.cat-adblocker-paw {
+  position: absolute;
+  bottom: 0;
+  width: auto;
+  height: 35vh;
+  display: block;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 38px rgba(0, 0, 0, 0.42));
+  transform-origin: 50% 58%;
+  --cat-adblocker-paw-travel: 100vw;
+  animation: cat-adblocker-paw-swipe 1000ms cubic-bezier(0.12, 0.86, 0.18, 1) both;
+}
+
+.cat-adblocker-fake-cursor {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  transform: translate(0, 0);
+  transform-origin: 4px 4px;
+  animation: cat-adblocker-cursor-push 1000ms cubic-bezier(0.11, 0.94, 0.18, 1) both;
+}
+
+.cat-adblocker-fake-cursor::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 18px;
+  height: 24px;
+  background: #fff;
+  clip-path: polygon(0 0, 0 24px, 6px 18px, 10px 27px, 15px 25px, 11px 16px, 20px 16px);
+  filter:
+    drop-shadow(0 0 1px rgba(0, 0, 0, 0.95))
+    drop-shadow(1px 2px 2px rgba(0, 0, 0, 0.45));
+}
+
+@keyframes cat-adblocker-paw-swipe {
+  0% {
+    opacity: 0;
+    transform: translateX(0) translateY(34px) rotate(-7deg) scale(0.92);
+  }
+
+  16% {
+    opacity: 1;
+    transform: translateX(calc(var(--cat-adblocker-paw-travel) * 0.24)) translateY(10px) rotate(4deg) scale(1.04);
+  }
+
+  42% {
+    opacity: 1;
+    transform: translateX(calc(var(--cat-adblocker-paw-travel) * 0.5)) translateY(-18px) rotate(-9deg) scale(1.14);
+  }
+
+  68% {
+    opacity: 1;
+    transform: translateX(calc(var(--cat-adblocker-paw-travel) * 0.78)) translateY(8px) rotate(5deg) scale(1.06);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(var(--cat-adblocker-paw-travel)) translateY(42px) rotate(-4deg) scale(0.96);
+  }
+}
+
+@keyframes cat-adblocker-cursor-push {
+  0%,
+  24% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  47% {
+    opacity: 1;
+    transform: translate(calc(var(--cat-adblocker-cursor-dx) * 0.82), calc(var(--cat-adblocker-cursor-dy) * 0.82))
+      rotate(-18deg);
+  }
+
+  76% {
+    opacity: 1;
+    transform: translate(var(--cat-adblocker-cursor-dx), var(--cat-adblocker-cursor-dy)) rotate(-18deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(var(--cat-adblocker-cursor-dx), var(--cat-adblocker-cursor-dy)) rotate(-18deg);
+  }
+}
+
+@keyframes cat-adblocker-rgb-sweep {
+  0% {
+    --cat-adblocker-rgb-x: 12%;
+    --cat-adblocker-rgb-y: 18%;
+    transform: scale(1);
+  }
+
+  25% {
+    --cat-adblocker-rgb-x: 88%;
+    --cat-adblocker-rgb-y: 26%;
+  }
+
+  50% {
+    --cat-adblocker-rgb-x: 72%;
+    --cat-adblocker-rgb-y: 86%;
+    transform: scale(1.08);
+  }
+
+  75% {
+    --cat-adblocker-rgb-x: 18%;
+    --cat-adblocker-rgb-y: 72%;
+  }
+
+  100% {
+    --cat-adblocker-rgb-x: 12%;
+    --cat-adblocker-rgb-y: 18%;
+    transform: scale(1);
+  }
+}
+
+@keyframes cat-adblocker-rgb-hue {
+  0% {
+    filter: hue-rotate(0deg) saturate(1.45);
+  }
+
+  100% {
+    filter: hue-rotate(360deg) saturate(1.45);
+  }
+}
+
+@keyframes cat-adblocker-laser-pan {
+  0% {
+    background-position: 0% 20%, 100% 30%, 30% 100%, 60% 0%;
+  }
+
+  50% {
+    background-position: 100% 80%, 0% 65%, 78% 0%, 20% 100%;
+  }
+
+  100% {
+    background-position: 0% 20%, 100% 30%, 30% 100%, 60% 0%;
+  }
+}
+
+@keyframes cat-adblocker-laser-spin {
+  0% {
+    transform: rotate(0deg) scale(1.1);
+  }
+
+  100% {
+    transform: rotate(360deg) scale(1.1);
+  }
 }
