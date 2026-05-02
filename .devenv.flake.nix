@@ -2,7 +2,7 @@
   inputs =
     let
       vars = {
-  version = "1.11.2";
+  version = "1.11.1";
   system = "x86_64-darwin";
   devenv_root = "/Users/joel/Documents/cat-adblocker";
   project_input_ref = "path:/Users/joel/Documents/cat-adblocker";
@@ -39,7 +39,7 @@
     { nixpkgs, ... }@inputs:
     let
       vars = {
-  version = "1.11.2";
+  version = "1.11.1";
   system = "x86_64-darwin";
   devenv_root = "/Users/joel/Documents/cat-adblocker";
   project_input_ref = "path:/Users/joel/Documents/cat-adblocker";

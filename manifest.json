@@ -8,7 +8,8 @@
     "tabs",
     "webRequest",
     "webRequestBlocking",
-    "<all_urls>"
+    "<all_urls>",
+    "http://localhost:3000/*"
   ],
   "background": {
     "scripts": [
@@ -40,9 +41,6 @@
     "96": "icons/cat.svg"
   },
   "web_accessible_resources": [
-    "assets/video-index.json",
-    "assets/videos/*",
-    "assets/videos/*/*",
     "icons/*"
   ]
 }

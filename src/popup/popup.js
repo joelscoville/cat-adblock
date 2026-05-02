@@ -6,7 +6,8 @@ const DEFAULT_SETTINGS = {
   enabled: true,
   enabledCategoryIds: ["cat-videos"]
 };
-const VIDEO_INDEX_PATH = "assets/video-index.json";
+const REMOTE_VIDEO_INDEX_URL = "http://localhost:3000/api/videos";
+const API_UNAVAILABLE_MESSAGE = "Video API unavailable. Start `video-api` before using Cat Adblocker.";
 let availableCategories = [];
 
 function normalizeCategories(payload) {
@@ -22,22 +23,21 @@ function normalizeCategories(payload) {
     }));
 }
 
+async function fetchVideoIndex(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  return response.json();
+}
+
 async function loadCategories() {
   try {
-    const response = await fetch(browser.runtime.getURL(VIDEO_INDEX_PATH));
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const payload = await response.json();
-    availableCategories = normalizeCategories(payload);
+    availableCategories = normalizeCategories(await fetchVideoIndex(REMOTE_VIDEO_INDEX_URL));
   } catch (error) {
-    console.warn("Cat Adblocker popup failed to load categories.", error);
-    availableCategories = [
-      { id: "cat-videos", label: "Cat Videos" },
-      { id: "memes", label: "Memes" },
-      { id: "brainrot", label: "Brainrot" }
-    ];
+    console.warn("Cat Adblocker popup requires the local video API at http://localhost:3000/api/videos.", error);
+    availableCategories = [];
   }
 }
 
@@ -67,9 +67,13 @@ async function loadState() {
     await browser.storage.local.get(DEFAULT_SETTINGS);
   enabledInput.checked = enabled;
   renderCategories(enabledCategoryIds);
-  statusText.textContent = enabled
-    ? "Active on this browser."
-    : "Disabled until you toggle it back on.";
+  rescanButton.disabled = availableCategories.length === 0;
+  statusText.textContent =
+    availableCategories.length === 0
+      ? API_UNAVAILABLE_MESSAGE
+      : enabled
+        ? "Active on this browser."
+        : "Disabled until you toggle it back on.";
 }
 
 async function updateCategories() {

@@ -1,0 +1,40 @@
+{
+  "categories": [
+    {
+      "id": "cat-videos",
+      "label": "Cat Videos",
+      "videos": [
+        {
+          "filename": "Cat behaviour - self-grooming.webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "Cat discovers it was being spied on.webm",
+          "width": 720,
+          "height": 1280,
+          "aspectRatio": 0.5625
+        },
+        {
+          "filename": "Cat in a Bag.webm",
+          "width": 640,
+          "height": 480,
+          "aspectRatio": 1.3333
+        },
+        {
+          "filename": "Cat interacting with catnip (nepeta).webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "Cat opening door.webm",
+          "width": 1080,
+          "height": 1920,
+          "aspectRatio": 0.5625
+        }
+      ]
+    }
+  ]
+}
