@@ -30,8 +30,8 @@ const RANDOM_INSERT_LIFETIME_MS = 200000;
 const MAX_RANDOM_INSERTIONS = 100;
 const RANDOM_INSERT_MIN_SIZE = 180;
 const RANDOM_INSERT_MAX_SIZE = 360;
-const PAW_INTERRUPT_MIN_DELAY_MS = 900;
-const PAW_INTERRUPT_MAX_DELAY_MS = 1800;
+const PAW_INTERRUPT_MIN_DELAY_MS = 200;
+const PAW_INTERRUPT_MAX_DELAY_MS = 800;
 const PAW_INTERRUPT_DURATION_MS = 900;
 const PAW_CURSOR_MOVE_DELAY_MS = 145;
 const CURSOR_MOVE_REQUEST_TIMEOUT_MS = 2500;
@@ -598,7 +598,7 @@ function createSkipButton(onSkip) {
   const skipButton = document.createElement("button");
   skipButton.className = SKIP_BUTTON_CLASS;
   skipButton.type = "button";
-  skipButton.textContent = "Skip ad";
+  skipButton.textContent = "skip cat";
   skipButton.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
@@ -897,7 +897,7 @@ function startProductiveInterruption() {
   const skipButton = document.createElement("button");
   skipButton.className = "cat-adblocker-interruption__skip";
   skipButton.type = "button";
-  skipButton.textContent = "Skip ad";
+  skipButton.textContent = "skip cat";
   skipButton.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
