@@ -1,0 +1,111 @@
+{
+  "categories": [
+    {
+      "id": "brainrot",
+      "label": "Brainrot",
+      "videos": []
+    },
+    {
+      "id": "cat-videos",
+      "label": "Cat Videos",
+      "videos": [
+        {
+          "filename": "\"Arya\" Cat plays with Acalypha indica-Pilangsari-2019.webm",
+          "path": "assets/videos/cat-videos/\"Arya\" Cat plays with Acalypha indica-Pilangsari-2019.webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 2.webm",
+          "path": "assets/videos/cat-videos/2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 2.webm",
+          "width": 1920,
+          "height": 1080,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 4.webm",
+          "path": "assets/videos/cat-videos/2022-10-18 LJUBLJANA Doma CARNIVORA Felis catus DOMAČA MAČKA 4.webm",
+          "width": 1920,
+          "height": 1080,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "35 удивительных трюков от Бенгальского кота (без звука).webm",
+          "path": "assets/videos/cat-videos/35 удивительных трюков от Бенгальского кота (без звука).webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "Andra and Billy.webm",
+          "path": "assets/videos/cat-videos/Andra and Billy.webm",
+          "width": 1920,
+          "height": 1080,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "Cat behaviour - self-grooming.webm",
+          "path": "assets/videos/cat-videos/Cat behaviour - self-grooming.webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "Cat discovers it was being spied on.webm",
+          "path": "assets/videos/cat-videos/Cat discovers it was being spied on.webm",
+          "width": 720,
+          "height": 1280,
+          "aspectRatio": 0.5625
+        },
+        {
+          "filename": "Cat Fluffy having a couching fit.webm",
+          "path": "assets/videos/cat-videos/Cat Fluffy having a couching fit.webm",
+          "width": 688,
+          "height": 652,
+          "aspectRatio": 1.0552
+        },
+        {
+          "filename": "Cat in a Bag.webm",
+          "path": "assets/videos/cat-videos/Cat in a Bag.webm",
+          "width": 640,
+          "height": 480,
+          "aspectRatio": 1.3333
+        },
+        {
+          "filename": "Cat interacting with catnip (nepeta).webm",
+          "path": "assets/videos/cat-videos/Cat interacting with catnip (nepeta).webm",
+          "width": 1280,
+          "height": 720,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "Cat opening door.webm",
+          "path": "assets/videos/cat-videos/Cat opening door.webm",
+          "width": 1080,
+          "height": 1920,
+          "aspectRatio": 0.5625
+        },
+        {
+          "filename": "cat-loop-1.webm",
+          "path": "assets/videos/cat-videos/cat-loop-1.webm",
+          "width": 640,
+          "height": 360,
+          "aspectRatio": 1.7778
+        },
+        {
+          "filename": "cat-loop-2.webm",
+          "path": "assets/videos/cat-videos/cat-loop-2.webm",
+          "width": 640,
+          "height": 360,
+          "aspectRatio": 1.7778
+        }
+      ]
+    },
+    {
+      "id": "memes",
+      "label": "Memes",
+      "videos": []
+    }
+  ]
+}

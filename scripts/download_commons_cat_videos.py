@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.error
@@ -14,7 +15,7 @@ from pathlib import Path
 API_URL = "https://commons.wikimedia.org/w/api.php"
 CATEGORY = "Category:Videos of cats"
 DEFAULT_UA = "cat-adblocker-downloader/1.0 (local workspace task)"
-MANIFEST_NAME = "video-manifest.json"
+INDEX_SCRIPT = Path(__file__).with_name("generate_video_index.py")
 
 
 def parse_args() -> argparse.Namespace:
@@ -23,8 +24,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--output-dir",
-        default="assets/videos",
-        help="Directory to store downloaded files. Default: assets/videos",
+        default="assets/videos/cat-videos",
+        help="Directory to store downloaded files. Default: assets/videos/cat-videos",
     )
     parser.add_argument(
         "--delay-seconds",
@@ -153,15 +154,12 @@ def download_file(client: CommonsClient, url: str, destination: Path) -> None:
     os.replace(temp_path, destination)
 
 
-def write_video_manifest(output_dir: Path) -> None:
-    filenames = sorted(
-        path.name for path in output_dir.iterdir() if path.is_file() and path.name.endswith(".webm")
-    )
-    manifest_path = output_dir.parent / MANIFEST_NAME
-    manifest_path.write_text(
-        json.dumps(filenames, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+def rebuild_video_index() -> None:
+    if not INDEX_SCRIPT.exists():
+        print(f"Skipping index rebuild; missing script: {INDEX_SCRIPT}", file=sys.stderr)
+        return
+
+    subprocess.run([sys.executable, str(INDEX_SCRIPT)], check=True)
 
 
 def main() -> int:
@@ -204,8 +202,8 @@ def main() -> int:
 
         time.sleep(args.delay_seconds)
 
-    write_video_manifest(output_dir)
-    print(f"Wrote manifest to {output_dir.parent / MANIFEST_NAME}")
+    rebuild_video_index()
+    print(f"Rebuilt video index in {output_dir.parent.parent / 'video-index.json'}")
     print("Download complete.")
     return 0
 

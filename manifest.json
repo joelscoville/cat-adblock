@@ -40,8 +40,9 @@
     "96": "icons/cat.svg"
   },
   "web_accessible_resources": [
-    "assets/video-manifest.json",
+    "assets/video-index.json",
     "assets/videos/*",
+    "assets/videos/*/*",
     "icons/*"
   ]
 }

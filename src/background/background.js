@@ -1,5 +1,6 @@
 const DEFAULT_SETTINGS = {
-  enabled: true
+  enabled: true,
+  enabledCategoryIds: ["cat-videos"]
 };
 let enabled = DEFAULT_SETTINGS.enabled;
 
@@ -57,7 +58,11 @@ browser.storage.local.get(DEFAULT_SETTINGS).then((settings) => {
 });
 
 browser.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === "local" && changes.enabled) {
+  if (areaName !== "local") {
+    return;
+  }
+
+  if (changes.enabled) {
     enabled = Boolean(changes.enabled.newValue);
   }
 });
@@ -103,5 +108,17 @@ browser.runtime.onMessage.addListener(async (message) => {
 
   if (message?.type === "CAT_ADBLOCKER_RESCAN") {
     await sendMessageToActiveTab({ type: "CAT_ADBLOCKER_RESCAN" });
+  }
+
+  if (message?.type === "CAT_ADBLOCKER_SET_CATEGORIES") {
+    const enabledCategoryIds = Array.isArray(message.enabledCategoryIds)
+      ? message.enabledCategoryIds
+      : DEFAULT_SETTINGS.enabledCategoryIds;
+
+    await browser.storage.local.set({ enabledCategoryIds });
+    await sendMessageToActiveTab({
+      type: "CAT_ADBLOCKER_APPLY_CATEGORIES",
+      enabledCategoryIds
+    });
   }
 });

@@ -1,13 +1,27 @@
 const STORAGE_DEFAULTS = {
-  enabled: true
+  enabled: true,
+  enabledCategoryIds: ["cat-videos"]
 };
 
-const FALLBACK_VIDEO_PATHS = [
-  browser.runtime.getURL("assets/videos/cat-loop-1.webm"),
-  browser.runtime.getURL("assets/videos/cat-loop-2.webm")
+const FALLBACK_VIDEOS = [
+  {
+    url: browser.runtime.getURL("assets/videos/cat-videos/cat-loop-1.webm"),
+    categoryId: "cat-videos",
+    width: null,
+    height: null,
+    aspectRatio: null
+  },
+  {
+    url: browser.runtime.getURL("assets/videos/cat-videos/cat-loop-2.webm"),
+    categoryId: "cat-videos",
+    width: null,
+    height: null,
+    aspectRatio: null
+  }
 ];
-const VIDEO_MANIFEST_PATH = "assets/video-manifest.json";
-let videoPaths = [...FALLBACK_VIDEO_PATHS];
+const VIDEO_INDEX_PATH = "assets/video-index.json";
+const MAX_VIDEO_RETRIES = 3;
+const TOP_MATCH_COUNT = 3;
 
 const MIN_WIDTH = 120;
 const MIN_HEIGHT = 60;
@@ -19,6 +33,9 @@ const BADGE_CLASS = "cat-adblocker-badge";
 const replacements = new Map();
 let observer = null;
 let enabled = true;
+let enabledCategoryIds = [...STORAGE_DEFAULTS.enabledCategoryIds];
+let indexedCategories = [];
+let activeVideos = [...FALLBACK_VIDEOS];
 
 function getCandidateElements(root = document) {
   const selector = [
@@ -96,28 +113,186 @@ function isLikelyAd(element) {
   return hasStrongAdSignal(element) && commonSlot;
 }
 
-function pickVideoPath() {
-  const index = Math.floor(Math.random() * videoPaths.length);
-  return videoPaths[index];
+function shuffle(array) {
+  const copy = [...array];
+  for (let index = copy.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [copy[index], copy[swapIndex]] = [copy[swapIndex], copy[index]];
+  }
+  return copy;
 }
 
-async function loadVideoPaths() {
+function normalizeVideoEntry(categoryId, entry) {
+  if (!entry || typeof entry.path !== "string") {
+    return null;
+  }
+
+  const width = Number.isFinite(entry.width) ? Number(entry.width) : null;
+  const height = Number.isFinite(entry.height) ? Number(entry.height) : null;
+  const aspectRatio =
+    Number.isFinite(entry.aspectRatio) && Number(entry.aspectRatio) > 0
+      ? Number(entry.aspectRatio)
+      : width && height
+        ? width / height
+        : null;
+
+  return {
+    url: browser.runtime.getURL(entry.path),
+    categoryId,
+    width,
+    height,
+    aspectRatio
+  };
+}
+
+function normalizeCategory(entry) {
+  if (!entry || typeof entry.id !== "string") {
+    return null;
+  }
+
+  const videos = Array.isArray(entry.videos)
+    ? entry.videos.map((video) => normalizeVideoEntry(entry.id, video)).filter(Boolean)
+    : [];
+
+  return {
+    id: entry.id,
+    label: typeof entry.label === "string" && entry.label ? entry.label : entry.id,
+    videos
+  };
+}
+
+async function loadVideoIndex() {
   try {
-    const response = await fetch(browser.runtime.getURL(VIDEO_MANIFEST_PATH));
+    const response = await fetch(browser.runtime.getURL(VIDEO_INDEX_PATH));
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    const filenames = await response.json();
-    if (!Array.isArray(filenames) || filenames.length === 0) {
-      throw new Error("Empty or invalid video manifest");
+    const payload = await response.json();
+    const categories = Array.isArray(payload?.categories)
+      ? payload.categories.map(normalizeCategory).filter(Boolean)
+      : [];
+    indexedCategories = categories;
+  } catch (error) {
+    console.warn("Cat Adblocker failed to load video index, using fallback videos.", error);
+    indexedCategories = [];
+  }
+}
+
+function getCategoryVideos(categoryIds) {
+  const requestedIds = new Set(categoryIds);
+  const matchingVideos = indexedCategories
+    .filter((category) => requestedIds.has(category.id))
+    .flatMap((category) => category.videos);
+
+  if (matchingVideos.length > 0) {
+    return matchingVideos;
+  }
+
+  const fallbackCategory = indexedCategories.find((category) => category.id === "cat-videos");
+  if (fallbackCategory?.videos.length) {
+    return fallbackCategory.videos;
+  }
+
+  return [...FALLBACK_VIDEOS];
+}
+
+function refreshActiveVideos() {
+  activeVideos = getCategoryVideos(enabledCategoryIds);
+}
+
+function pickVideoForDimensions(dimensions, excludedUrls = new Set()) {
+  const availableVideos = activeVideos.filter((video) => !excludedUrls.has(video.url));
+  const candidates = availableVideos.length > 0 ? availableVideos : activeVideos;
+  if (candidates.length === 0) {
+    return null;
+  }
+
+  const slotRatio = dimensions.height > 0 ? dimensions.width / dimensions.height : null;
+  const ratioCandidates = candidates.filter((video) => Number.isFinite(video.aspectRatio));
+  if (!slotRatio || ratioCandidates.length === 0) {
+    return shuffle(candidates)[0];
+  }
+
+  const ranked = [...ratioCandidates].sort(
+    (left, right) => Math.abs(left.aspectRatio - slotRatio) - Math.abs(right.aspectRatio - slotRatio)
+  );
+  return shuffle(ranked.slice(0, TOP_MATCH_COUNT))[0] || shuffle(candidates)[0];
+}
+
+function ensurePlaying(video) {
+  const playPromise = video.play();
+  if (playPromise && typeof playPromise.catch === "function") {
+    playPromise.catch(() => {});
+  }
+}
+
+function setVideoSource(video, videoState, nextVideo) {
+  if (!nextVideo) {
+    return false;
+  }
+
+  videoState.currentVideo = nextVideo;
+  videoState.ignorePauseUntil = Date.now() + 250;
+  video.src = nextVideo.url;
+  video.load();
+  ensurePlaying(video);
+  return true;
+}
+
+function renderVideoFallback(wrapper, video, badge) {
+  video.remove();
+  badge.textContent = "Cat Adblocker fallback";
+
+  const fallback = document.createElement("div");
+  fallback.className = "cat-adblocker-slot__fallback";
+  fallback.textContent = "Video unavailable. Still blocking the ad slot.";
+  wrapper.insertBefore(fallback, badge);
+}
+
+function recoverVideo(wrapper, video, badge, videoState) {
+  if (videoState.retryCount >= MAX_VIDEO_RETRIES) {
+    renderVideoFallback(wrapper, video, badge);
+    return;
+  }
+
+  if (videoState.currentVideo?.url) {
+    videoState.failedUrls.add(videoState.currentVideo.url);
+  }
+
+  const nextVideo = pickVideoForDimensions(videoState.dimensions, videoState.failedUrls);
+  if (!nextVideo) {
+    renderVideoFallback(wrapper, video, badge);
+    return;
+  }
+
+  videoState.retryCount += 1;
+  setVideoSource(video, videoState, nextVideo);
+}
+
+function attachPlaybackRecovery(wrapper, video, badge, videoState) {
+  video.addEventListener("ended", () => {
+    video.currentTime = 0;
+    ensurePlaying(video);
+  });
+
+  video.addEventListener("pause", () => {
+    if (Date.now() < videoState.ignorePauseUntil || video.ended || video.seeking || !video.src) {
+      return;
     }
 
-    videoPaths = filenames.map((filename) => browser.runtime.getURL(`assets/videos/${filename}`));
-  } catch (error) {
-    console.warn("Cat Adblocker failed to load video manifest, using fallback videos.", error);
-    videoPaths = [...FALLBACK_VIDEO_PATHS];
-  }
+    ensurePlaying(video);
+  });
+
+  video.addEventListener("stalled", () => {
+    videoState.ignorePauseUntil = Date.now() + 250;
+    video.load();
+    ensurePlaying(video);
+  });
+
+  video.addEventListener("error", () => {
+    recoverVideo(wrapper, video, badge, videoState);
+  });
 }
 
 function createReplacement(element, dimensions) {
@@ -129,11 +304,12 @@ function createReplacement(element, dimensions) {
   wrapper.style.display = window.getComputedStyle(element).display === "inline" ? "inline-block" : "block";
 
   const video = document.createElement("video");
-  video.src = pickVideoPath();
   video.muted = true;
+  video.defaultMuted = true;
   video.autoplay = true;
   video.loop = true;
   video.playsInline = true;
+  video.preload = "auto";
   video.setAttribute("aria-label", "Cat video replacing an ad");
 
   video.addEventListener("mouseenter", () => {
@@ -147,8 +323,24 @@ function createReplacement(element, dimensions) {
   const badge = document.createElement("div");
   badge.className = BADGE_CLASS;
   badge.textContent = "Cat Adblocker";
-
   wrapper.append(video, badge);
+
+  const initialVideo = pickVideoForDimensions(dimensions);
+  const videoState = {
+    currentVideo: null,
+    dimensions,
+    retryCount: 0,
+    failedUrls: new Set(),
+    ignorePauseUntil: 0
+  };
+
+  if (initialVideo) {
+    setVideoSource(video, videoState, initialVideo);
+  } else {
+    renderVideoFallback(wrapper, video, badge);
+  }
+
+  attachPlaybackRecovery(wrapper, video, badge, videoState);
   return wrapper;
 }
 
@@ -231,8 +423,12 @@ function stopObserver() {
 
 async function init() {
   const settings = await browser.storage.local.get(STORAGE_DEFAULTS);
-  await loadVideoPaths();
+  await loadVideoIndex();
   enabled = Boolean(settings.enabled);
+  enabledCategoryIds = Array.isArray(settings.enabledCategoryIds)
+    ? settings.enabledCategoryIds
+    : [...STORAGE_DEFAULTS.enabledCategoryIds];
+  refreshActiveVideos();
 
   if (enabled) {
     scan(document);
@@ -255,20 +451,36 @@ browser.runtime.onMessage.addListener((message) => {
   if (message?.type === "CAT_ADBLOCKER_RESCAN" && enabled) {
     scan(document);
   }
+
+  if (message?.type === "CAT_ADBLOCKER_APPLY_CATEGORIES") {
+    enabledCategoryIds = Array.isArray(message.enabledCategoryIds)
+      ? message.enabledCategoryIds
+      : [...STORAGE_DEFAULTS.enabledCategoryIds];
+    refreshActiveVideos();
+  }
 });
 
 browser.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName !== "local" || !changes.enabled) {
+  if (areaName !== "local") {
     return;
   }
 
-  enabled = Boolean(changes.enabled.newValue);
-  if (enabled) {
-    scan(document);
-    startObserver();
-  } else {
-    stopObserver();
-    restoreAll();
+  if (changes.enabled) {
+    enabled = Boolean(changes.enabled.newValue);
+    if (enabled) {
+      scan(document);
+      startObserver();
+    } else {
+      stopObserver();
+      restoreAll();
+    }
+  }
+
+  if (changes.enabledCategoryIds) {
+    enabledCategoryIds = Array.isArray(changes.enabledCategoryIds.newValue)
+      ? changes.enabledCategoryIds.newValue
+      : [...STORAGE_DEFAULTS.enabledCategoryIds];
+    refreshActiveVideos();
   }
 });
 

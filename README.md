@@ -7,6 +7,7 @@ A small Firefox MV2 hackathon extension that blocks a subset of obvious ad reque
 - Heuristic DOM scan for ad-like `iframe` and banner elements
 - Light request blocking with a short hardcoded ad-host list
 - Replacement videos sized to the detected ad slot
+- Category mixing for `cat-videos`, `memes`, and `brainrot`
 - Popup toggle plus manual rescan button
 
 ## Development environment
@@ -34,6 +35,7 @@ devenv shell
 
 Inside the shell:
 
+- `index-assets` rebuilds `assets/video-index.json`
 - `run` starts Firefox with the extension loaded through `web-ext`
 - `lint` runs `web-ext lint`
 - `build` creates an `.xpi` in `.web-ext-artifacts/`
@@ -58,4 +60,7 @@ are optional for this workflow.
 - This is intentionally a demo, not a full ad blocker.
 - Request blocking is narrow and conservative.
 - Some sites will still show ads or break around replaced slots.
-- Replacement video selection is driven by `assets/video-manifest.json`; rerun `scripts/download_commons_cat_videos.py` after adding or downloading videos so the manifest stays current.
+- Replacement video selection is driven by `assets/video-index.json`.
+- Add videos by dropping `.webm` files into category folders under `assets/videos/`, such as `assets/videos/cat-videos`, `assets/videos/memes`, and `assets/videos/brainrot`.
+- Run `index-assets` after changing local assets, or rely on `run` and `build`, which regenerate the index automatically.
+- The Wikimedia Commons downloader writes into `assets/videos/cat-videos` and rebuilds the index after downloads finish.

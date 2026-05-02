@@ -54,6 +54,31 @@ p {
   background: rgba(255, 255, 255, 0.08);
 }
 
+.categories {
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.categories h2 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.categories__list {
+  display: grid;
+  gap: 8px;
+}
+
+.category-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 button {
   width: 100%;
   border: 0;
