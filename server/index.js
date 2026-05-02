@@ -1,19 +1,24 @@
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
-const { execFile } = require("child_process");
+const readline = require("readline");
+const { execFile, spawn } = require("child_process");
 const { URL } = require("url");
 
 const PORT = Number(process.env.PORT || 3000);
 const CATEGORY_ORDER = ["cat-videos", "memes", "brainrot"];
 const SERVER_VIDEO_ROOT = path.join(__dirname, "videos");
 const METADATA_PATH = path.join(__dirname, "video-index.json");
+const WINDOWS_CURSOR_HELPER_PATH = path.join(__dirname, "cursor-windows.ps1");
 const VIDEO_EXTENSION = ".webm";
 const MIME_TYPES = {
   ".webm": "video/webm",
   ".json": "application/json; charset=utf-8"
 };
 const MAX_JSON_BODY_BYTES = 1024 * 16;
+let windowsCursorHelper = null;
+let windowsCursorHelperReader = null;
+let windowsCursorMoveQueue = [];
 
 function sendCorsHeaders(res, statusCode, extraHeaders = {}) {
   res.writeHead(statusCode, {
@@ -282,55 +287,96 @@ function run(argv) {
   });
 }
 
+function rejectWindowsCursorMoves(error) {
+  for (const pendingMove of windowsCursorMoveQueue) {
+    pendingMove.reject(error);
+  }
+
+  windowsCursorMoveQueue = [];
+}
+
+function handleWindowsCursorHelperLine(line) {
+  const pendingMove = windowsCursorMoveQueue.shift();
+
+  if (!pendingMove) {
+    return;
+  }
+
+  const trimmedLine = line.trim();
+  if (trimmedLine === "OK") {
+    pendingMove.resolve();
+    return;
+  }
+
+  pendingMove.reject(new Error(trimmedLine.replace(/^ERR\s*/, "") || "Windows cursor helper failed"));
+}
+
+function getWindowsCursorHelper() {
+  if (windowsCursorHelper) {
+    return windowsCursorHelper;
+  }
+
+  const child = spawn(
+    "powershell.exe",
+    [
+      "-NoProfile",
+      "-NonInteractive",
+      "-ExecutionPolicy",
+      "Bypass",
+      "-File",
+      WINDOWS_CURSOR_HELPER_PATH
+    ],
+    { windowsHide: true, stdio: ["pipe", "pipe", "pipe"] }
+  );
+
+  windowsCursorHelper = child;
+  windowsCursorHelperReader = readline.createInterface({ input: child.stdout });
+  windowsCursorHelperReader.on("line", handleWindowsCursorHelperLine);
+  child.stderr.on("data", () => {});
+
+  child.on("error", (error) => {
+    if (windowsCursorHelper === child) {
+      windowsCursorHelper = null;
+      windowsCursorHelperReader?.close();
+      windowsCursorHelperReader = null;
+    }
+
+    rejectWindowsCursorMoves(error);
+  });
+
+  child.on("exit", (code, signal) => {
+    if (windowsCursorHelper === child) {
+      windowsCursorHelper = null;
+      windowsCursorHelperReader?.close();
+      windowsCursorHelperReader = null;
+    }
+
+    const reason = signal ? `signal ${signal}` : `code ${code}`;
+    rejectWindowsCursorMoves(new Error(`Windows cursor helper exited with ${reason}`));
+  });
+
+  return child;
+}
+
 function moveCursorOnWindows(screenPoint) {
-  const script = `
-Add-Type -TypeDefinition @"
-using System;
-using System.Runtime.InteropServices;
-
-public static class CatAdblockerCursor {
-  [DllImport("user32.dll")]
-  public static extern bool SetProcessDPIAware();
-
-  [DllImport("user32.dll", SetLastError = true)]
-  public static extern bool SetCursorPos(int X, int Y);
-}
-"@
-
-$x = [int][double]$args[0]
-$y = [int][double]$args[1]
-
-[CatAdblockerCursor]::SetProcessDPIAware() | Out-Null
-
-if (-not [CatAdblockerCursor]::SetCursorPos($x, $y)) {
-  $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
-  throw "SetCursorPos failed with Win32 error $errorCode"
-}
-`;
+  const child = getWindowsCursorHelper();
 
   return new Promise((resolve, reject) => {
-    execFile(
-      "powershell.exe",
-      [
-        "-NoProfile",
-        "-NonInteractive",
-        "-ExecutionPolicy",
-        "Bypass",
-        "-Command",
-        script,
-        String(screenPoint.x),
-        String(screenPoint.y)
-      ],
-      { windowsHide: true },
-      (error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
+    const pendingMove = { resolve, reject };
+    windowsCursorMoveQueue.push(pendingMove);
 
-        resolve();
+    child.stdin.write(`${screenPoint.x} ${screenPoint.y}\n`, "utf8", (error) => {
+      if (!error) {
+        return;
       }
-    );
+
+      const pendingIndex = windowsCursorMoveQueue.indexOf(pendingMove);
+      if (pendingIndex !== -1) {
+        windowsCursorMoveQueue.splice(pendingIndex, 1);
+      }
+
+      reject(error);
+    });
   });
 }
 
@@ -425,6 +471,14 @@ function handleRequest(req, res) {
 }
 
 const server = http.createServer(handleRequest);
+
+if (process.platform === "win32") {
+  getWindowsCursorHelper();
+}
+
+process.on("exit", () => {
+  windowsCursorHelper?.kill();
+});
 
 server.listen(PORT, () => {
   console.log(`Cat Adblocker video API running at http://localhost:${PORT}`);

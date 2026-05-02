@@ -302,7 +302,7 @@ html.cat-adblocker-hide-cursor * {
   filter: drop-shadow(0 24px 38px rgba(0, 0, 0, 0.42));
   transform-origin: 50% 58%;
   --cat-adblocker-paw-travel: 100vw;
-  animation: cat-adblocker-paw-swipe 1000ms cubic-bezier(0.12, 0.86, 0.18, 1) both;
+  animation: cat-adblocker-paw-swipe 650ms cubic-bezier(0.12, 0.86, 0.18, 1) both;
 }
 
 .cat-adblocker-fake-cursor {
@@ -311,7 +311,17 @@ html.cat-adblocker-hide-cursor * {
   height: 28px;
   transform: translate(0, 0);
   transform-origin: 4px 4px;
-  animation: cat-adblocker-cursor-push 1000ms cubic-bezier(0.11, 0.94, 0.18, 1) both;
+  animation: cat-adblocker-cursor-push 650ms cubic-bezier(0.11, 0.94, 0.18, 1) both;
+}
+
+.cat-adblocker-paw-overlay--settling .cat-adblocker-paw {
+  display: none;
+}
+
+.cat-adblocker-paw-overlay--settling .cat-adblocker-fake-cursor {
+  opacity: 1;
+  animation: none;
+  transform: translate(var(--cat-adblocker-cursor-dx), var(--cat-adblocker-cursor-dy)) rotate(-18deg);
 }
 
 .cat-adblocker-fake-cursor::before {

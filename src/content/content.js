@@ -18,24 +18,26 @@ const SKIP_BUTTON_CLASS = "cat-adblocker-skip";
 const QUAD_GRID_CLASS = "cat-adblocker-quad";
 const YOUTUBE_AD_CHECK_INTERVAL_MS = 250;
 const YOUTUBE_HOSTS = ["youtube.com", "www.youtube.com", "m.youtube.com"];
-const PRODUCTIVE_INTERRUPT_DELAY_MS = 15 * 1000;
-const PRODUCTIVE_INTERRUPT_DURATION_MS = 15 * 1000;
-const PAGE_TIMELINE_TICK_MS = 1000;
-const PAGE_TIMELINE_RANDOM_INSERT_MS = 15 * 1000;
-const PAGE_TIMELINE_MAIN_REPLACE_MS = 40 * 1000;
-const PAGE_TIMELINE_TAKEOVER_MS = 60 * 1000;
-const RANDOM_INSERT_INTERVAL_MS = 9000;
-const MAX_RANDOM_INSERTIONS = 8;
-const RANDOM_INSERT_MIN_SIZE = 160;
-const RANDOM_INSERT_MAX_SIZE = 340;
-const PAW_INTERRUPT_MIN_DELAY_MS = 2 * 1000;
-const PAW_INTERRUPT_MAX_DELAY_MS = 3500;
-const PAW_INTERRUPT_DURATION_MS = 1000;
-const PAW_CURSOR_MOVE_DELAY_MS = 180;
+const PRODUCTIVE_INTERRUPT_DELAY_MS = 4 * 1000;
+const PRODUCTIVE_INTERRUPT_DURATION_MS = 8 * 500;
+const PAGE_TIMELINE_TICK_MS = 500;
+const PAGE_TIMELINE_RANDOM_INSERT_MS = 2 * 1000;
+const PAGE_TIMELINE_MAIN_REPLACE_MS = 3 * 1000;
+const PAGE_TIMELINE_TAKEOVER_MS = 8 * 1000;
+const RANDOM_INSERT_INTERVAL_MS = 1000;
+const RANDOM_INSERT_LIFETIME_MS = 200000;
+const MAX_RANDOM_INSERTIONS = 100;
+const RANDOM_INSERT_MIN_SIZE = 180;
+const RANDOM_INSERT_MAX_SIZE = 360;
+const PAW_INTERRUPT_MIN_DELAY_MS = 900;
+const PAW_INTERRUPT_MAX_DELAY_MS = 1800;
+const PAW_INTERRUPT_DURATION_MS = 650;
+const PAW_CURSOR_MOVE_DELAY_MS = 105;
+const CURSOR_MOVE_REQUEST_TIMEOUT_MS = 2500;
 const PAW_PUSH_MIN_DISTANCE = 320;
 const PAW_PUSH_MAX_DISTANCE = 620;
 const FAKE_CURSOR_SIZE = 28;
-const PAW_HEIGHT_VIEWPORT_RATIO = 0.35;
+const PAW_HEIGHT_VIEWPORT_RATIO = 0.5;
 const PAW_IMAGE_PATH = "icons/ChatGPT Image May 2, 2026, 12_43_18 PM.png";
 const OIIAI_VIDEO_FILENAME = "YTDown_YouTube_W_W-OIIA-OIIA-Spinning-Cat_Media_IxX_QHay02M_001_1080p.webm";
 const OIIAI_AUDIO_ID = "oiiai-enter";
@@ -54,7 +56,7 @@ const PRODUCTIVE_HOSTS = [
   "notion.so",
   "office.com",
   "slack.com",
-  "trello.com"
+  "trello.com",
 ];
 
 const replacements = new Map();
@@ -85,7 +87,8 @@ let activePawInterruption = null;
 let activeOiiaiTakeover = null;
 
 function requestCursorMove(target) {
-  fetch(REMOTE_CURSOR_MOVE_URL, {
+  const controller = typeof AbortController === "function" ? new AbortController() : null;
+  const options = {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -101,7 +104,27 @@ function requestCursorMove(target) {
       innerHeight: window.innerHeight,
       devicePixelRatio: window.devicePixelRatio || 1
     })
-  }).catch(() => {});
+  };
+
+  if (controller) {
+    options.signal = controller.signal;
+  }
+
+  let timeoutId = null;
+  const timeoutPromise = new Promise((resolve) => {
+    timeoutId = window.setTimeout(() => {
+      controller?.abort();
+      resolve(false);
+    }, CURSOR_MOVE_REQUEST_TIMEOUT_MS);
+  });
+
+  const movePromise = fetch(REMOTE_CURSOR_MOVE_URL, options)
+    .then((response) => response.ok)
+    .catch(() => false);
+
+  return Promise.race([movePromise, timeoutPromise]).finally(() => {
+    clearTimeout(timeoutId);
+  });
 }
 
 function getCandidateElements(root = document) {
@@ -749,6 +772,10 @@ function stopInterruptionMedia(interruption) {
   }
 }
 
+function formatSeconds(milliseconds) {
+  return Math.max(Math.ceil(milliseconds / 1000), 1);
+}
+
 function createInterruptionTimeout() {
   return window.setTimeout(() => {
     stopProductiveInterruption();
@@ -812,7 +839,7 @@ function expandProductiveInterruptionToQuad() {
     video.remove();
   });
   overlay.classList.add("cat-adblocker-interruption--quad");
-  badge.textContent = "Back in 15 seconds";
+  badge.textContent = `Back in ${formatSeconds(PRODUCTIVE_INTERRUPT_DURATION_MS)} seconds`;
   skipButton?.remove();
   ensureActiveInterruptionTimeout();
 
@@ -855,7 +882,7 @@ function startProductiveInterruption() {
 
   const badge = document.createElement("div");
   badge.className = "cat-adblocker-interruption__badge";
-  badge.textContent = "Back in 15 seconds";
+  badge.textContent = `Back in ${formatSeconds(PRODUCTIVE_INTERRUPT_DURATION_MS)} seconds`;
 
   const skipButton = document.createElement("button");
   skipButton.className = "cat-adblocker-interruption__skip";
@@ -946,6 +973,21 @@ function isPageTimelineActive() {
   return enabled && document.visibilityState === "visible" && windowHasFocus;
 }
 
+function removeRandomInsertion(wrapper) {
+  if (!wrapper) {
+    return;
+  }
+
+  if (wrapper.__catAdblockerTimeoutId) {
+    clearTimeout(wrapper.__catAdblockerTimeoutId);
+    wrapper.__catAdblockerTimeoutId = null;
+  }
+
+  stopReplacementAudio(wrapper);
+  wrapper.remove();
+  randomInsertions = randomInsertions.filter((entry) => entry !== wrapper);
+}
+
 function createFloatingCatVideo() {
   if (!isPageTimelineActive() || activeVideos.length === 0 || randomInsertions.length >= MAX_RANDOM_INSERTIONS) {
     return;
@@ -976,6 +1018,9 @@ function createFloatingCatVideo() {
   wrapper.append(video || fallback, skipButton, badge);
   document.documentElement.append(wrapper);
   randomInsertions.push(wrapper);
+  wrapper.__catAdblockerTimeoutId = window.setTimeout(() => {
+    removeRandomInsertion(wrapper);
+  }, RANDOM_INSERT_LIFETIME_MS);
 }
 
 function startRandomInsertions() {
@@ -993,11 +1038,9 @@ function stopRandomInsertions() {
     randomInsertInterval = null;
   }
 
-  for (const wrapper of randomInsertions) {
-    stopReplacementAudio(wrapper);
-    wrapper.remove();
+  for (const wrapper of [...randomInsertions]) {
+    removeRandomInsertion(wrapper);
   }
-  randomInsertions = [];
 }
 
 function isReplaceableMainElement(element) {
@@ -1057,7 +1100,7 @@ function startPageTakeover() {
 
   pageTakeoverActive = true;
   pageTakeoverShown = true;
-  activeInterruption.badge.textContent = "Back in 15 seconds";
+  activeInterruption.badge.textContent = `Back in ${formatSeconds(PRODUCTIVE_INTERRUPT_DURATION_MS)} seconds`;
   ensureActiveInterruptionTimeout();
 }
 
@@ -1146,9 +1189,50 @@ function cleanupPawInterruption() {
 
   clearTimeout(activePawInterruption.timeoutId);
   clearTimeout(activePawInterruption.cursorMoveTimeoutId);
+  activePawInterruption.cancelled = true;
   activePawInterruption.overlay.remove();
   activePawInterruption = null;
   document.documentElement.classList.remove("cat-adblocker-hide-cursor");
+}
+
+function startPawCursorMove(interruption) {
+  if (!interruption) {
+    return Promise.resolve(false);
+  }
+
+  if (interruption.cursorMovePromise) {
+    return interruption.cursorMovePromise;
+  }
+
+  interruption.cursorMovePromise = requestCursorMove(interruption.cursorEnd).then((moved) => {
+    if (moved && activePawInterruption === interruption) {
+      lastPointerPosition = interruption.cursorEnd;
+    }
+
+    return moved;
+  });
+
+  return interruption.cursorMovePromise;
+}
+
+function finishPawInterruption(interruption) {
+  if (!interruption || activePawInterruption !== interruption || interruption.finishing) {
+    return;
+  }
+
+  interruption.finishing = true;
+  clearTimeout(interruption.timeoutId);
+  clearTimeout(interruption.cursorMoveTimeoutId);
+  interruption.overlay.classList.add("cat-adblocker-paw-overlay--settling");
+
+  startPawCursorMove(interruption).finally(() => {
+    if (activePawInterruption !== interruption || interruption.cancelled) {
+      return;
+    }
+
+    cleanupPawInterruption();
+    schedulePawInterruption();
+  });
 }
 
 function schedulePawInterruption() {
@@ -1231,25 +1315,31 @@ function startPawInterruption() {
   document.documentElement.append(overlay);
   document.documentElement.classList.add("cat-adblocker-hide-cursor");
 
+  const interruption = {
+    overlay,
+    timeoutId: null,
+    cursorMoveTimeoutId: null,
+    cursorEnd,
+    cursorMovePromise: null,
+    finishing: false,
+    cancelled: false
+  };
+
   const cursorMoveTimeoutId = window.setTimeout(() => {
-    if (!activePawInterruption || activePawInterruption.overlay !== overlay) {
+    if (activePawInterruption !== interruption) {
       return;
     }
 
-    requestCursorMove(cursorEnd);
-    lastPointerPosition = cursorEnd;
+    startPawCursorMove(interruption);
   }, PAW_CURSOR_MOVE_DELAY_MS);
 
   const timeoutId = window.setTimeout(() => {
-    cleanupPawInterruption();
-    schedulePawInterruption();
+    finishPawInterruption(interruption);
   }, PAW_INTERRUPT_DURATION_MS);
 
-  activePawInterruption = {
-    overlay,
-    timeoutId,
-    cursorMoveTimeoutId
-  };
+  interruption.timeoutId = timeoutId;
+  interruption.cursorMoveTimeoutId = cursorMoveTimeoutId;
+  activePawInterruption = interruption;
 }
 
 function replaceElement(element) {
@@ -1361,7 +1451,7 @@ function startProductiveUsageTimer() {
   }
 
   lastProductiveTickAt = Date.now();
-  productiveUsageInterval = window.setInterval(trackProductiveUsage, 1000);
+  productiveUsageInterval = window.setInterval(trackProductiveUsage, 500);
 }
 
 function stopProductiveUsageTimer() {
