@@ -103,7 +103,7 @@
 
 .cat-adblocker-random-insert {
   position: fixed;
-  z-index: 2147483645;
+  z-index: 2147483000;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.18);
   border-radius: 8px;
@@ -128,7 +128,7 @@
 .cat-adblocker-interruption {
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
+  z-index: 2147483200;
   width: 100vw;
   height: 100vh;
   min-width: 100vw;
@@ -233,7 +233,7 @@
 .cat-adblocker-oiiai-takeover {
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
+  z-index: 2147483300;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -284,7 +284,7 @@ html.cat-adblocker-hide-cursor * {
 .cat-adblocker-paw-overlay {
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
+  z-index: 2147483647 !important;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -295,6 +295,7 @@ html.cat-adblocker-hide-cursor * {
 .cat-adblocker-paw {
   position: absolute;
   bottom: 0;
+  z-index: 2;
   width: auto;
   height: 35vh;
   display: block;
@@ -302,16 +303,17 @@ html.cat-adblocker-hide-cursor * {
   filter: drop-shadow(0 24px 38px rgba(0, 0, 0, 0.42));
   transform-origin: 50% 58%;
   --cat-adblocker-paw-travel: 100vw;
-  animation: cat-adblocker-paw-swipe 650ms cubic-bezier(0.12, 0.86, 0.18, 1) both;
+  animation: cat-adblocker-paw-swipe 900ms cubic-bezier(0.12, 0.86, 0.18, 1) both;
 }
 
 .cat-adblocker-fake-cursor {
   position: absolute;
+  z-index: 3;
   width: 28px;
   height: 28px;
   transform: translate(0, 0);
   transform-origin: 4px 4px;
-  animation: cat-adblocker-cursor-push 650ms cubic-bezier(0.11, 0.94, 0.18, 1) both;
+  animation: cat-adblocker-cursor-push 900ms cubic-bezier(0.11, 0.94, 0.18, 1) both;
 }
 
 .cat-adblocker-paw-overlay--settling .cat-adblocker-paw {

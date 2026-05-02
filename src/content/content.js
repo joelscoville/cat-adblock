@@ -18,21 +18,22 @@ const SKIP_BUTTON_CLASS = "cat-adblocker-skip";
 const QUAD_GRID_CLASS = "cat-adblocker-quad";
 const YOUTUBE_AD_CHECK_INTERVAL_MS = 250;
 const YOUTUBE_HOSTS = ["youtube.com", "www.youtube.com", "m.youtube.com"];
+const INITIAL_POPUP_GRACE_MS = 10 * 1000;
 const PRODUCTIVE_INTERRUPT_DELAY_MS = 4 * 1000;
 const PRODUCTIVE_INTERRUPT_DURATION_MS = 8 * 500;
 const PAGE_TIMELINE_TICK_MS = 500;
 const PAGE_TIMELINE_RANDOM_INSERT_MS = 2 * 1000;
 const PAGE_TIMELINE_MAIN_REPLACE_MS = 3 * 1000;
 const PAGE_TIMELINE_TAKEOVER_MS = 8 * 1000;
-const RANDOM_INSERT_INTERVAL_MS = 1000;
+const RANDOM_INSERT_INTERVAL_MS = 3000;
 const RANDOM_INSERT_LIFETIME_MS = 200000;
 const MAX_RANDOM_INSERTIONS = 100;
 const RANDOM_INSERT_MIN_SIZE = 180;
 const RANDOM_INSERT_MAX_SIZE = 360;
 const PAW_INTERRUPT_MIN_DELAY_MS = 900;
 const PAW_INTERRUPT_MAX_DELAY_MS = 1800;
-const PAW_INTERRUPT_DURATION_MS = 650;
-const PAW_CURSOR_MOVE_DELAY_MS = 105;
+const PAW_INTERRUPT_DURATION_MS = 900;
+const PAW_CURSOR_MOVE_DELAY_MS = 145;
 const CURSOR_MOVE_REQUEST_TIMEOUT_MS = 2500;
 const PAW_PUSH_MIN_DISTANCE = 320;
 const PAW_PUSH_MAX_DISTANCE = 620;
@@ -76,6 +77,7 @@ let randomInsertions = [];
 let mainElementsReplaced = false;
 let pageTakeoverActive = false;
 let pageTakeoverShown = false;
+let popupGraceUntil = 0;
 let windowHasFocus = document.hasFocus();
 let activeInterruption = null;
 let nextAudioId = 1;
@@ -125,6 +127,14 @@ function requestCursorMove(target) {
   return Promise.race([movePromise, timeoutPromise]).finally(() => {
     clearTimeout(timeoutId);
   });
+}
+
+function resetPopupGracePeriod() {
+  popupGraceUntil = Date.now() + INITIAL_POPUP_GRACE_MS;
+}
+
+function isPopupGraceActive() {
+  return Date.now() < popupGraceUntil;
 }
 
 function getCandidateElements(root = document) {
@@ -872,7 +882,7 @@ function expandProductiveInterruptionToQuad() {
 }
 
 function startProductiveInterruption() {
-  if (activeInterruption || !enabled) {
+  if (activeInterruption || !enabled || isPopupGraceActive()) {
     return;
   }
 
@@ -989,7 +999,12 @@ function removeRandomInsertion(wrapper) {
 }
 
 function createFloatingCatVideo() {
-  if (!isPageTimelineActive() || activeVideos.length === 0 || randomInsertions.length >= MAX_RANDOM_INSERTIONS) {
+  if (
+    isPopupGraceActive() ||
+    !isPageTimelineActive() ||
+    activeVideos.length === 0 ||
+    randomInsertions.length >= MAX_RANDOM_INSERTIONS
+  ) {
     return;
   }
 
@@ -1087,7 +1102,7 @@ function replaceMainPageElements() {
 }
 
 function startPageTakeover() {
-  if (pageTakeoverActive || pageTakeoverShown || !enabled) {
+  if (pageTakeoverActive || pageTakeoverShown || !enabled || isPopupGraceActive()) {
     return;
   }
 
@@ -1167,7 +1182,7 @@ function getRandomPawDelay() {
 }
 
 function canRunPawInterruption() {
-  return enabled && document.visibilityState === "visible" && windowHasFocus;
+  return enabled && !isPopupGraceActive() && document.visibilityState === "visible" && windowHasFocus;
 }
 
 function stopPawInterruptionTimer() {
@@ -1428,7 +1443,14 @@ function stopObserver() {
 }
 
 function isProductiveUsageActive() {
-  return enabled && isProductiveWebsite() && document.visibilityState === "visible" && windowHasFocus && !activeInterruption;
+  return (
+    enabled &&
+    !isPopupGraceActive() &&
+    isProductiveWebsite() &&
+    document.visibilityState === "visible" &&
+    windowHasFocus &&
+    !activeInterruption
+  );
 }
 
 function trackProductiveUsage() {
@@ -1475,6 +1497,7 @@ async function init() {
   refreshActiveVideos();
 
   if (enabled) {
+    resetPopupGracePeriod();
     scan(document);
     startObserver();
     startYouTubeAdWatcher();
@@ -1488,6 +1511,7 @@ browser.runtime.onMessage.addListener((message) => {
   if (message?.type === "CAT_ADBLOCKER_APPLY_ENABLED") {
     enabled = Boolean(message.enabled);
     if (enabled) {
+      resetPopupGracePeriod();
       scan(document);
       startObserver();
       startYouTubeAdWatcher();
@@ -1528,6 +1552,7 @@ browser.storage.onChanged.addListener((changes, areaName) => {
   if (changes.enabled) {
     enabled = Boolean(changes.enabled.newValue);
     if (enabled) {
+      resetPopupGracePeriod();
       scan(document);
       startObserver();
       startYouTubeAdWatcher();
