@@ -24,12 +24,12 @@ const PAGE_TIMELINE_TICK_MS = 1000;
 const PAGE_TIMELINE_RANDOM_INSERT_MS = 15 * 1000;
 const PAGE_TIMELINE_MAIN_REPLACE_MS = 40 * 1000;
 const PAGE_TIMELINE_TAKEOVER_MS = 60 * 1000;
-const RANDOM_INSERT_INTERVAL_MS = 4500;
+const RANDOM_INSERT_INTERVAL_MS = 9000;
 const MAX_RANDOM_INSERTIONS = 8;
 const RANDOM_INSERT_MIN_SIZE = 160;
 const RANDOM_INSERT_MAX_SIZE = 340;
-const PAW_INTERRUPT_MIN_DELAY_MS = 3 * 1000;
-const PAW_INTERRUPT_MAX_DELAY_MS = 5 * 1000;
+const PAW_INTERRUPT_MIN_DELAY_MS = 2 * 1000;
+const PAW_INTERRUPT_MAX_DELAY_MS = 3500;
 const PAW_INTERRUPT_DURATION_MS = 1000;
 const PAW_CURSOR_MOVE_DELAY_MS = 180;
 const PAW_PUSH_MIN_DISTANCE = 320;
@@ -73,6 +73,7 @@ let randomInsertInterval = null;
 let randomInsertions = [];
 let mainElementsReplaced = false;
 let pageTakeoverActive = false;
+let pageTakeoverShown = false;
 let windowHasFocus = document.hasFocus();
 let activeInterruption = null;
 let nextAudioId = 1;
@@ -97,7 +98,8 @@ function requestCursorMove(target) {
       outerWidth: window.outerWidth,
       outerHeight: window.outerHeight,
       innerWidth: window.innerWidth,
-      innerHeight: window.innerHeight
+      innerHeight: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio || 1
     })
   }).catch(() => {});
 }
@@ -747,6 +749,20 @@ function stopInterruptionMedia(interruption) {
   }
 }
 
+function createInterruptionTimeout() {
+  return window.setTimeout(() => {
+    stopProductiveInterruption();
+  }, PRODUCTIVE_INTERRUPT_DURATION_MS);
+}
+
+function ensureActiveInterruptionTimeout() {
+  if (!activeInterruption || activeInterruption.timeoutId) {
+    return;
+  }
+
+  activeInterruption.timeoutId = createInterruptionTimeout();
+}
+
 function stopProductiveInterruption() {
   if (!activeInterruption) {
     return;
@@ -798,6 +814,7 @@ function expandProductiveInterruptionToQuad() {
   overlay.classList.add("cat-adblocker-interruption--quad");
   badge.textContent = "Back in 15 seconds";
   skipButton?.remove();
+  ensureActiveInterruptionTimeout();
 
   const dimensions = {
     width: Math.max(Math.floor(window.innerWidth / 2), 1),
@@ -859,17 +876,13 @@ function startProductiveInterruption() {
   overlay.append(video, skipButton, badge);
   document.documentElement.append(overlay);
 
-  const timeoutId = window.setTimeout(() => {
-    stopProductiveInterruption();
-  }, PRODUCTIVE_INTERRUPT_DURATION_MS);
-
   activeInterruption = {
     overlay,
     videos: [video],
     audioIds: [videoState.audioId],
     badge,
     skipButton,
-    timeoutId
+    timeoutId: createInterruptionTimeout()
   };
 
   window.requestAnimationFrame(() => {
@@ -895,9 +908,6 @@ function stopOiiaiTakeover() {
     return;
   }
 
-  activeOiiaiTakeover.video.pause();
-  activeOiiaiTakeover.video.removeAttribute("src");
-  activeOiiaiTakeover.video.load();
   stopBackgroundAudio(OIIAI_AUDIO_ID);
   activeOiiaiTakeover.overlay.remove();
   activeOiiaiTakeover = null;
@@ -919,35 +929,17 @@ function startOiiaiTakeover() {
   overlay.className = "cat-adblocker-oiiai-takeover";
   overlay.setAttribute(PROCESS_MARKER, "true");
 
-  const video = document.createElement("video");
-  video.className = "cat-adblocker-oiiai-takeover__video";
-  video.autoplay = true;
-  video.defaultMuted = true;
-  video.loop = true;
-  video.muted = true;
-  video.playsInline = true;
-  video.preload = "auto";
-  video.src = selectedVideo.url;
-  video.setAttribute("aria-label", "OIIAI OIIAI spinning cat video");
-  video.setAttribute("autoplay", "");
-  video.setAttribute("muted", "");
-  video.setAttribute("playsinline", "");
-
   const tint = document.createElement("div");
   tint.className = "cat-adblocker-oiiai-takeover__tint";
 
   const lasers = document.createElement("div");
   lasers.className = "cat-adblocker-oiiai-takeover__lasers";
 
-  overlay.append(video, tint, lasers);
+  overlay.append(tint, lasers);
   document.documentElement.append(overlay);
-  activeOiiaiTakeover = { overlay, video };
+  activeOiiaiTakeover = { overlay };
 
   startBackgroundAudio(OIIAI_AUDIO_ID, selectedVideo.url, { loop: true, volume: 1 });
-  const playPromise = video.play();
-  if (playPromise && typeof playPromise.catch === "function") {
-    playPromise.catch(() => {});
-  }
 }
 
 function isPageTimelineActive() {
@@ -1052,7 +1044,7 @@ function replaceMainPageElements() {
 }
 
 function startPageTakeover() {
-  if (pageTakeoverActive || !enabled) {
+  if (pageTakeoverActive || pageTakeoverShown || !enabled) {
     return;
   }
 
@@ -1064,11 +1056,9 @@ function startPageTakeover() {
   }
 
   pageTakeoverActive = true;
-  activeInterruption.badge.textContent = "Cat Adblocker";
-  if (activeInterruption.timeoutId) {
-    clearTimeout(activeInterruption.timeoutId);
-    activeInterruption.timeoutId = null;
-  }
+  pageTakeoverShown = true;
+  activeInterruption.badge.textContent = "Back in 15 seconds";
+  ensureActiveInterruptionTimeout();
 }
 
 function applyPageTimeline() {
@@ -1118,6 +1108,7 @@ function stopPageTimeline() {
   pageTimelineElapsedMs = 0;
   lastPageTimelineTickAt = 0;
   mainElementsReplaced = false;
+  pageTakeoverShown = false;
   stopRandomInsertions();
 }
 

@@ -221,7 +221,7 @@ function getFiniteNumber(value, fallback = null) {
   return Number.isFinite(number) ? number : fallback;
 }
 
-function toScreenPoint(payload) {
+function toScreenPoint(payload, options = {}) {
   const x = getFiniteNumber(payload?.x);
   const y = getFiniteNumber(payload?.y);
   const screenX = getFiniteNumber(payload?.screenX);
@@ -230,6 +230,7 @@ function toScreenPoint(payload) {
   const outerHeight = getFiniteNumber(payload?.outerHeight);
   const innerWidth = getFiniteNumber(payload?.innerWidth);
   const innerHeight = getFiniteNumber(payload?.innerHeight);
+  const devicePixelRatio = getFiniteNumber(payload?.devicePixelRatio, 1);
 
   if (
     x === null ||
@@ -246,10 +247,11 @@ function toScreenPoint(payload) {
 
   const sideChrome = Math.max((outerWidth - innerWidth) / 2, 0);
   const topChrome = Math.max(outerHeight - innerHeight - sideChrome, 0);
+  const pixelScale = options.scaleToDevicePixels ? Math.max(devicePixelRatio, 0.1) : 1;
 
   return {
-    x: Math.round(screenX + sideChrome + x),
-    y: Math.round(screenY + topChrome + y)
+    x: Math.round((screenX + sideChrome + x) * pixelScale),
+    y: Math.round((screenY + topChrome + y) * pixelScale)
   };
 }
 
@@ -280,10 +282,83 @@ function run(argv) {
   });
 }
 
+function moveCursorOnWindows(screenPoint) {
+  const script = `
+Add-Type -TypeDefinition @"
+using System;
+using System.Runtime.InteropServices;
+
+public static class CatAdblockerCursor {
+  [DllImport("user32.dll")]
+  public static extern bool SetProcessDPIAware();
+
+  [DllImport("user32.dll", SetLastError = true)]
+  public static extern bool SetCursorPos(int X, int Y);
+}
+"@
+
+$x = [int][double]$args[0]
+$y = [int][double]$args[1]
+
+[CatAdblockerCursor]::SetProcessDPIAware() | Out-Null
+
+if (-not [CatAdblockerCursor]::SetCursorPos($x, $y)) {
+  $errorCode = [Runtime.InteropServices.Marshal]::GetLastWin32Error()
+  throw "SetCursorPos failed with Win32 error $errorCode"
+}
+`;
+
+  return new Promise((resolve, reject) => {
+    execFile(
+      "powershell.exe",
+      [
+        "-NoProfile",
+        "-NonInteractive",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-Command",
+        script,
+        String(screenPoint.x),
+        String(screenPoint.y)
+      ],
+      { windowsHide: true },
+      (error) => {
+        if (error) {
+          reject(error);
+          return;
+        }
+
+        resolve();
+      }
+    );
+  });
+}
+
+function getCursorMover(platform) {
+  if (platform === "darwin") {
+    return {
+      move: moveCursorOnMac,
+      screenPointOptions: {}
+    };
+  }
+
+  if (platform === "win32") {
+    return {
+      move: moveCursorOnWindows,
+      screenPointOptions: {
+        scaleToDevicePixels: true
+      }
+    };
+  }
+
+  return null;
+}
+
 async function handleCursorMove(req, res) {
-  if (process.platform !== "darwin") {
+  const cursorMover = getCursorMover(process.platform);
+  if (!cursorMover) {
     sendJson(res, 501, {
-      error: "Cursor movement is only implemented for macOS in this local server."
+      error: "Cursor movement is only implemented for macOS and Windows in this local server."
     });
     return;
   }
@@ -296,16 +371,17 @@ async function handleCursorMove(req, res) {
     return;
   }
 
-  const screenPoint = toScreenPoint(payload);
+  const screenPoint = toScreenPoint(payload, cursorMover.screenPointOptions);
   if (!screenPoint) {
     sendJson(res, 400, { error: "Missing or invalid cursor coordinates" });
     return;
   }
 
   try {
-    await moveCursorOnMac(screenPoint);
+    await cursorMover.move(screenPoint);
     sendJson(res, 200, {
       ok: true,
+      platform: process.platform,
       x: screenPoint.x,
       y: screenPoint.y
     });
